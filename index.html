@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Prerana Farm – Live Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gd:#1B5E20;--gm:#2d7a4a;--gl:#4CAF50;--gp:#e8f5ee;
+  --br:#795548;--bl:#c4a882;--cr:#FFF8E1;--cd:#f0ead8;
+  --am:#d4841a;--ap:#fff3e0;--re:#c0392b;--rp:#fdecea;
+  --bl2:#1565c0;--bp:#e3f2fd;--te:#1a1a10;--ts:#5a5a48;--tm:#8a8a72;
+  --brd:rgba(107,76,53,0.15);--shd:0 2px 12px rgba(26,74,46,0.08);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--cd);color:var(--te);height:100vh;overflow:hidden;display:flex}
+html{height:100%}
+h1,h2,h3{font-family:'Playfair Display',serif}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--bl);border-radius:2px}
+.sidebar{width:220px;background:var(--gd);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar-logo{padding:16px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sidebar-logo h1{color:#fff;font-size:14px;line-height:1.35}
+.sidebar-logo p{color:rgba(255,255,255,.4);font-size:10px;margin-top:3px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;color:rgba(255,255,255,.6);font-size:13px;cursor:pointer;border-left:3px solid transparent;transition:all .15s}
+.nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav-item.active{background:rgba(255,255,255,.12);color:#fff;border-left-color:var(--gl)}
+.nav-item i{font-size:16px;flex-shrink:0}
+.alert-pill{background:#c0392b;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:auto}
+.sidebar-footer{padding:10px 16px;border-top:1px solid rgba(255,255,255,.1);margin-top:auto;font-size:10px;color:rgba(255,255,255,.25)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{background:#fff;border-bottom:1px solid var(--brd);padding:10px 22px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar h2{font-size:18px;color:var(--gd)}
+.topbar-actions{display:flex;align-items:center;gap:8px}
+.content{flex:1;overflow-y:auto;padding:18px 22px}
+.page{display:none;animation:fadeIn .2s ease;flex-direction:column;flex:1;overflow:hidden}
+.page.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;border:none;font-weight:500;transition:all .15s}
+.btn-primary{background:var(--gm);color:#fff}.btn-primary:hover{background:var(--gd)}
+.btn-outline{background:#fff;border:1px solid var(--brd);color:var(--te)}.btn-outline:hover{background:var(--cr)}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:6px}
+.btn-warn{background:var(--rp);border:1px solid #f5c6cb;color:var(--re)}
+.card{background:#fff;border-radius:12px;border:1px solid var(--brd);box-shadow:var(--shd)}
+.card-header{padding:12px 16px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between}
+.card-header h3{font-size:14px;font-weight:500;color:var(--te)}
+.card-body{padding:14px 16px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-bottom:18px}
+.stat-card{background:#fff;border-radius:10px;padding:13px;border:1px solid var(--brd);border-left:4px solid var(--gm)}
+.stat-card.red{border-left-color:var(--re)}.stat-card.amber{border-left-color:var(--am)}
+.stat-card.blue{border-left-color:var(--bl2)}.stat-card.purple{border-left-color:#7b1fa2}
+.slabel{font-size:11px;color:var(--tm);margin-bottom:4px}
+.svalue{font-size:22px;font-weight:600;color:var(--gd)}
+.stat-card.red .svalue{color:var(--re)}.stat-card.amber .svalue{color:var(--am)}
+.stat-card.blue .svalue{color:var(--bl2)}.stat-card.purple .svalue{color:#7b1fa2}
+.ssub{font-size:11px;color:var(--ts);margin-top:2px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.b-veg{background:var(--gp);color:var(--gd)}.b-flow{background:var(--ap);color:#7a4a00}
+.b-fruit{background:var(--bp);color:var(--bl2)}.b-harv{background:#fce4ec;color:#880e4f}
+.b-unk{background:#f5f5f5;color:#888}.b-gray{background:#f0f0f0;color:#555}
+.b-red{background:var(--rp);color:var(--re)}.b-green{background:var(--gp);color:var(--gm)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{padding:8px 10px;text-align:left;font-size:11px;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;font-weight:500;border-bottom:1px solid var(--brd);background:var(--cr)}
+.tbl td{padding:9px 10px;border-bottom:1px solid rgba(107,76,53,.07);vertical-align:middle}
+.tbl tr.clickable:hover td{background:var(--gp);cursor:pointer}
+.tbl-wrap{overflow-x:auto}
+.search-bar{display:flex;align-items:center;gap:8px;background:var(--cr);border-radius:8px;padding:7px 12px;margin-bottom:12px;border:1px solid var(--brd)}
+.search-bar input{background:none;border:none;outline:none;font-size:13px;flex:1;font-family:'DM Sans',sans-serif;color:var(--te)}
+.pill{padding:4px 11px;border-radius:20px;font-size:12px;border:1px solid var(--brd);background:#fff;cursor:pointer;color:var(--ts);transition:all .15s}
+.pill.active{background:var(--gd);color:#fff;border-color:var(--gd)}
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:580px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--brd)}
+.modal-header h3{font-size:17px;color:var(--gd)}
+.close-btn{background:none;border:none;font-size:22px;cursor:pointer;color:var(--tm);border-radius:6px;padding:2px 6px}.close-btn:hover{background:var(--cr)}
+.modal-body{padding:18px 20px}
+.profile-hdr{background:var(--gd);border-radius:10px;padding:18px;color:#fff;display:flex;gap:14px;margin-bottom:14px}
+.profile-hdr.fruiting{background:#1565c0}.profile-hdr.flowering{background:var(--am)}
+.profile-icon{width:50px;height:50px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+.meta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.meta-box{background:var(--cr);border-radius:8px;padding:9px 11px}
+.meta-box label{font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;display:block}
+.meta-box p{font-size:13px;font-weight:500;margin-top:2px}
+.warn-box{background:var(--rp);border:1px solid #f5c6cb;border-radius:8px;padding:10px 13px;font-size:13px;color:var(--re);margin-bottom:12px;display:flex;gap:8px;align-items:flex-start}
+.info-box{background:var(--ap);border:1px solid #ffd699;border-radius:8px;padding:10px 13px;font-size:13px;color:#7a4a00;margin-bottom:12px}
+.care-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--brd);font-size:13px}
+.care-row:last-child{border-bottom:none}
+.act-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-group{display:flex;flex-direction:column;gap:3px}
+.form-group label{font-size:11px;color:var(--ts);font-weight:500}
+.form-group input,.form-group select,.form-group textarea{padding:7px 10px;border:1px solid var(--brd);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--te);outline:none}
+.form-group input:focus,.form-group select:focus{border-color:var(--gm)}
+.form-full{grid-column:1/-1}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;padding-top:14px;border-top:1px solid var(--brd)}
+.act-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--brd);align-items:flex-start}
+.act-item:last-child{border-bottom:none}
+.act-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px}
+.overdue-banner{background:var(--re);color:#fff;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.overdue-banner h3{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500}
+.map-grid{display:grid;gap:3px}
+.map-cell{border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:48px;cursor:pointer;transition:transform .1s;border:1px solid transparent;padding:3px}
+.map-cell:hover{transform:scale(1.06)}
+.map-cell .mc-emoji{font-size:16px}
+.map-cell .mc-name{font-size:8px;text-align:center;line-height:1.2;max-width:58px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-top:1px}
+.map-cell .mc-id{font-size:8px;opacity:.6;font-family:monospace}
+.chart-wrap{position:relative;width:100%;height:200px}
+@media(max-width:900px){.sidebar{display:none}.two-col{grid-template-columns:1fr}.meta-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>🌿 Prerana Farm</h1>
+    <p>Live Tree Tracker · Oct 2024 batch</p>
+    <p style="margin-top:4px;color:rgba(255,255,255,.5);font-size:10px">Planted as 1-yr saplings · Now ~1.5 yrs</p>
+  </div>
+  <nav>
+    <div class="nav-item active" onclick="go('dashboard',this)"><i class="ti ti-layout-dashboard"></i>Dashboard</div>
+    <div class="nav-item" onclick="go('trees',this)"><i class="ti ti-trees"></i>Tree Registry</div>
+    <div class="nav-item" onclick="go('care',this)"><i class="ti ti-clock"></i>Care Alerts<span class="alert-pill" id="alertCount">117</span></div>
+    <div class="nav-item" onclick="go('activities',this)"><i class="ti ti-leaf"></i>Log Activity</div>
+    <div class="nav-item" onclick="go('map',this)"><i class="ti ti-layout-grid"></i>Farm Map</div>
+    <div class="nav-item" onclick="go('issues',this)"><i class="ti ti-alert-circle"></i>Issues<span class="alert-pill">11</span></div>
+    <a class="nav-item" href="https://vermaclear.github.io/prerana-farm/tag.html" target="_blank" style="text-decoration:none;background:rgba(92,184,92,.15);border-left:3px solid #6abf69;margin-top:6px">
+      <i class="ti ti-camera" style="color:#6abf69"></i>
+      <span style="color:#6abf69;font-weight:600">📸 Tag a Tree</span>
+      <i class="ti ti-external-link" style="margin-left:auto;font-size:12px;color:rgba(106,191,105,.6)"></i>
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <p><span id="syncDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#f0a500;margin-right:5px;vertical-align:middle"></span><span id="syncStatus">Connecting…</span></p>
+    <p style="margin-top:3px">145 trees · Oct 2024</p>
+    <p>Both families · Live shared</p>
+  </div>
+</aside>
+
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+  <div class="topbar">
+    <h2>Dashboard</h2>
+    <div class="topbar-actions">
+      <span style="font-size:12px;color:var(--tm)">Today: Jun 2026</span>
+      <button class="btn btn-primary btn-sm" onclick="go('activities',document.querySelector('[onclick*=activities]'))"><i class="ti ti-plus"></i>Log Activity</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="overdue-banner">
+      <i class="ti ti-alert-triangle" style="font-size:20px;flex-shrink:0"></i>
+      <div>
+        <h3>⚠ 117 trees are overdue for vermicompost & neem spray</h3>
+        <p style="font-size:12px;opacity:.85;margin-top:2px">No care has been logged since planting in Oct 2024. First vermicompost was due Dec 2024.</p>
+      </div>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;margin-left:auto;flex-shrink:0" onclick="go('care',document.querySelector('[onclick*=care]'))">View All →</button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="slabel">Total Trees</div><div class="svalue">145</div><div class="ssub">Oct 2024 batch</div></div>
+      <div class="stat-card blue"><div class="slabel">Identified</div><div class="svalue">134</div><div class="ssub">Species known</div></div>
+      <div class="stat-card amber"><div class="slabel">Unknown</div><div class="svalue">11</div><div class="ssub">Need ID</div></div>
+      <div class="stat-card"><div class="slabel">Vegetative</div><div class="svalue">98</div><div class="ssub">Growing</div></div>
+      <div class="stat-card purple"><div class="slabel">Flowering</div><div class="svalue">16</div><div class="ssub">Blooming now</div></div>
+      <div class="stat-card blue"><div class="slabel">Fruiting</div><div class="svalue">20</div><div class="ssub">Active</div></div>
+      <div class="stat-card red"><div class="slabel">Care Overdue</div><div class="svalue">117</div><div class="ssub">Need attention</div></div>
+      <div class="stat-card amber"><div class="slabel">Mango Trees</div><div class="svalue">42</div><div class="ssub">Largest group</div></div>
+    </div>
+
+    <a href="https://vermaclear.github.io/prerana-farm/tag.html" target="_blank" style="text-decoration:none;display:block;margin-bottom:18px">
+      <div style="background:linear-gradient(135deg,#1B5E20,#2d7a4a);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:16px;box-shadow:0 2px 12px rgba(27,94,32,.25)">
+        <span style="font-size:36px">📸</span>
+        <div style="flex:1">
+          <div style="color:#6abf69;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px">New Feature</div>
+          <div style="color:#fff;font-size:17px;font-weight:700;font-family:'Playfair Display',serif">Stand &amp; Tag a Tree</div>
+          <div style="color:rgba(255,255,255,.7);font-size:12px;margin-top:3px">Walk up to any tree → snap a photo → tag it live with GPS · Both families see it instantly</div>
+        </div>
+        <span style="color:#6abf69;font-size:24px">→</span>
+      </div>
+    </a>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><h3>Species Distribution</h3></div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="chartSpecies" role="img" aria-label="Species chart"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Growth Stage Breakdown</h3></div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="chartStage" role="img" aria-label="Stage chart"></canvas></div></div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><h3>🌸 Currently Flowering (16)</h3><span style="font-size:12px;color:var(--am)">Pomegranate, Lemon, Lime…</span></div>
+        <div class="card-body" id="dashFlowering"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>🍓 Currently Fruiting (20)</h3><span style="font-size:12px;color:var(--bl2)">Banana, Papaya, Drumstick…</span></div>
+        <div class="card-body" id="dashFruiting"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>📋 Data Issues Found in Your Tracker</h3></div>
+      <div class="card-body">
+        <div class="warn-box" style="margin-bottom:8px"><i class="ti ti-alert-circle" style="flex-shrink:0;margin-top:1px"></i><div><strong>All F2- trees are labelled "Family 1"</strong> in the Family column. The IDs correctly say F2-001 to F2-081, but the Family cell shows "Family 1" for all 145 trees. This was an issue in the template. Easily fixed — let me know and I'll regenerate the file with the correct family labels.</div></div>
+        <div class="warn-box" style="margin-bottom:8px"><i class="ti ti-alert-circle" style="flex-shrink:0;margin-top:1px"></i><div><strong>Age shows "3 yr" but trees are ~1.5 years old.</strong> The planted date is Oct 2024 and the formula calculates 2026 - 2024 = 2 (which shows as "3 yr"). The formula needs fixing to use month-level precision.</div></div>
+        <div class="info-box"><i class="ti ti-info-circle" style="margin-right:6px"></i><strong>Good news:</strong> Planted date (Oct 1 2024) is filled for all 145 trees. Growth stages are set — 98 Vegetative, 16 Flowering, 20 Fruiting. Care schedule dates are pre-calculated (Next Vermicompost / Next Spray columns populated for 117 trees).</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TREE REGISTRY -->
+<div id="page-trees" class="page">
+  <div class="topbar">
+    <h2 id="treesTitle">Tree Registry (145)</h2>
+    <div class="topbar-actions">
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()"><i class="ti ti-download"></i>Export CSV</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="card" style="padding:12px;margin-bottom:12px">
+      <div class="search-bar"><i class="ti ti-search" style="color:var(--tm)"></i><input id="treeSearch" placeholder="Search ID, name, species…" oninput="renderTrees()"></div>
+      <div class="filter-row" id="stagePills">
+        <button class="pill active" onclick="setStageFilt('',this)">All</button>
+        <button class="pill" onclick="setStageFilt('Vegetative',this)">🌿 Vegetative (98)</button>
+        <button class="pill" onclick="setStageFilt('Flowering',this)">🌸 Flowering (16)</button>
+        <button class="pill" onclick="setStageFilt('Fruiting',this)">🍓 Fruiting (20)</button>
+        <button class="pill" onclick="setStageFilt('Unknown',this)">❓ Unknown (11)</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select id="speciesFilter" class="btn btn-outline btn-sm" onchange="renderTrees()" style="cursor:pointer;border-radius:8px"></select>
+        <select id="blockFilter" class="btn btn-outline btn-sm" onchange="renderTrees()" style="cursor:pointer;border-radius:8px">
+          <option value="">All Blocks</option><option value="A">Block A (Cols 1–4)</option><option value="B">Block B (Cols 5–9)</option>
+        </select>
+      </div>
+    </div>
+    <div class="card tbl-wrap">
+      <table class="tbl"><thead><tr>
+        <th>ID</th><th>Name</th><th>Species</th><th>Block</th><th>Grid</th><th>Planted</th><th>Stage</th><th>Next Vermi</th><th>Next Spray</th><th>Care Status</th>
+      </tr></thead><tbody id="treeRows"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- CARE ALERTS -->
+<div id="page-care" class="page">
+  <div class="topbar"><h2>Care Alerts – All Overdue</h2></div>
+  <div class="content">
+    <div class="warn-box" style="margin-bottom:16px;border-radius:10px">
+      <i class="ti ti-alarm" style="font-size:20px;flex-shrink:0"></i>
+      <div>
+        <strong style="font-size:14px">117 trees have never been cared for since planting (Oct 2024)</strong>
+        <p style="margin-top:4px;font-size:12px">First vermicompost was due around Dec 2024 (90 days after planting for Mango), Jan 2025 for Guava, etc. All are now ~18 months overdue. Start immediately with Vermicompost + Jeevamrutham, then spray within the week.</p>
+      </div>
+    </div>
+    <div class="two-col" style="margin-bottom:14px">
+      <div class="card">
+        <div class="card-header"><h3>🌱 Do Today – Vermicompost</h3></div>
+        <div class="card-body">
+          <div class="care-row"><span>All 42 Mango trees</span><span class="badge b-red">90-day cycle</span></div>
+          <div class="care-row"><span>All 12 Guava trees</span><span class="badge b-red">60-day cycle</span></div>
+          <div class="care-row"><span>All 9 Custard Apple</span><span class="badge b-red">90-day cycle</span></div>
+          <div class="care-row"><span>All 7 Coconut trees</span><span class="badge b-red">90-day cycle</span></div>
+          <div class="care-row"><span>All 6 Banana plants</span><span class="badge b-red">45-day cycle</span></div>
+          <div class="care-row"><span>All 6 Papaya plants</span><span class="badge b-red">45-day cycle</span></div>
+          <div class="care-row"><span>All 6 Peach trees</span><span class="badge b-red">60-day cycle</span></div>
+          <div class="care-row" style="border-bottom:none;padding-top:10px"><span style="font-weight:500">Recommended dose</span><span style="color:var(--gm);font-weight:500">2–3 kg per tree</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>💧 Do This Week – Neem Spray</h3></div>
+        <div class="card-body">
+          <div class="care-row"><span>All 42 Mango trees</span><span class="badge b-red">30-day cycle</span></div>
+          <div class="care-row"><span>All 12 Guava trees</span><span class="badge b-red">25-day cycle</span></div>
+          <div class="care-row"><span>All 6 Peach trees</span><span class="badge b-red">25-day cycle</span></div>
+          <div class="care-row"><span>All 6 Papaya</span><span class="badge b-red">20-day cycle</span></div>
+          <div class="care-row"><span>All 5 Drumstick</span><span class="badge b-red">30-day cycle</span></div>
+          <div class="care-row"><span>All 5 Pomegranate</span><span class="badge b-red">30-day cycle</span></div>
+          <div class="care-row"><span>All 5 Sapota trees</span><span class="badge b-red">30-day cycle</span></div>
+          <div class="care-row" style="border-bottom:none;padding-top:10px"><span style="font-weight:500">Dilution</span><span style="color:var(--gm);font-weight:500">50ml neem/L water</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Overdue Trees – Full List</h3><span style="font-size:12px;color:var(--re)">117 trees · No care logged since planting</span></div>
+      <div class="card-body tbl-wrap">
+        <table class="tbl"><thead><tr>
+          <th>Tree ID</th><th>Species</th><th>Block</th><th>Next Vermicompost</th><th>Next Neem Spray</th><th>Days Late (Vermi)</th>
+        </tr></thead><tbody id="careRows"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOG ACTIVITY -->
+<div id="page-activities" class="page">
+  <div class="topbar"><h2>Log Activity</h2></div>
+  <div class="content">
+    <div class="card" style="max-width:640px">
+      <div class="card-header"><h3>Record Farm Activity</h3></div>
+      <div class="card-body">
+        <div class="act-form">
+          <div class="form-group"><label>Activity Type</label>
+            <select id="aa_type">
+              <option>Vermicompost</option><option>Jeevamrutham</option><option>Farmyard Manure</option>
+              <option>Neem Oil Spray</option><option>Organic Pesticide</option><option>Pruning</option>
+              <option>Mulching</option><option>Weeding</option><option>Disease Treatment</option>
+              <option>Harvest</option><option>Watering</option><option>Observation</option>
+            </select></div>
+          <div class="form-group"><label>Date</label><input id="aa_date" type="date" value="2026-06-02"></div>
+          <div class="form-group"><label>Tree ID / Block</label><input id="aa_tree" placeholder="e.g. F1-001 or Block A"></div>
+          <div class="form-group"><label>Done By</label><input id="aa_by" placeholder="Worker name"></div>
+          <div class="form-group"><label>Quantity</label><input id="aa_qty" type="number" placeholder="5"></div>
+          <div class="form-group"><label>Unit</label>
+            <select id="aa_unit"><option>kg</option><option>litres</option><option>units</option><option>bunches</option></select></div>
+          <div class="form-group"><label>Next Due Date</label><input id="aa_next" type="date"></div>
+          <div class="form-group"><label>Health Observed</label>
+            <select id="aa_health"><option value="">No change</option><option>Healthy</option><option>Needs Attention</option><option>Weak</option><option>Sick</option></select></div>
+          <div class="form-group form-full"><label>Notes</label><textarea id="aa_notes" style="min-height:65px;resize:vertical" placeholder="Observations, issues noticed…"></textarea></div>
+        </div>
+        <div class="modal-footer" style="border-top:none;margin-top:10px;padding-top:0">
+          <button class="btn btn-primary" onclick="saveActivity()"><i class="ti ti-check"></i>Log Activity</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="card-header"><h3>Activity Log</h3></div>
+      <div class="card-body tbl-wrap">
+        <table class="tbl"><thead><tr><th>Date</th><th>Tree/Block</th><th>Activity</th><th>Qty</th><th>By</th><th>Notes</th></tr></thead>
+        <tbody id="actRows"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--tm)">No activities logged yet. Log the first one above!</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FARM MAP -->
+<div id="page-map" class="page">
+  <div class="topbar"><h2>Farm Map</h2><span style="font-size:12px;color:var(--tm)">Click any tree for details · 9 cols × 18 rows</span></div>
+  <div class="content">
+    <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;font-size:12px">
+      <span><span style="display:inline-block;width:12px;height:12px;background:rgba(21,101,192,.15);border:1px solid rgba(21,101,192,.4);border-radius:3px;vertical-align:-1px"></span> Block A (Cols 1–4)</span>
+      <span><span style="display:inline-block;width:12px;height:12px;background:rgba(123,31,162,.12);border:1px solid rgba(123,31,162,.35);border-radius:3px;vertical-align:-1px"></span> Block B (Cols 5–9)</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;background:#fff3cd;border:1px solid #ffc107;border-radius:3px"></span>Flowering</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;background:#cce5ff;border:1px solid #4d94ff;border-radius:3px"></span>Fruiting</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;background:#f5f5f5;border:1px dashed #ccc;border-radius:3px"></span>Unknown</span>
+    </div>
+    <div class="card" style="overflow:auto"><div id="farmMap" style="padding:14px"></div></div>
+  </div>
+</div>
+
+<!-- ISSUES -->
+<div id="page-issues" class="page">
+  <div class="topbar"><h2>Issues & Unknowns</h2></div>
+  <div class="content">
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><h3>❓ 11 Unidentified Trees</h3></div>
+        <div class="card-body" id="unknownList"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>⚠ Data Issues in Tracker</h3></div>
+        <div class="card-body">
+          <div class="warn-box" style="margin-bottom:10px"><i class="ti ti-alert-circle" style="flex-shrink:0"></i>
+            <div><strong>Family column wrong for F2- trees</strong><br><span style="font-size:12px">All 81 F2- trees show "Family 1" — should be "Family 2". Needs correction in the Excel file.</span></div>
+          </div>
+          <div class="warn-box" style="margin-bottom:10px"><i class="ti ti-alert-circle" style="flex-shrink:0"></i>
+            <div><strong>Age formula off by 1 year</strong><br><span style="font-size:12px">Formula: 2026 - 2024 = 2, then displays as "3 yr". Should show "1.5 years" or "18 months".</span></div>
+          </div>
+          <div class="warn-box"><i class="ti ti-alert-circle" style="flex-shrink:0"></i>
+            <div><strong>No activities logged yet</strong><br><span style="font-size:12px">Activity Log and Harvest Log sheets are empty. Start logging to build your farm history.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="card-header"><h3>Species to Confirm</h3></div>
+      <div class="card-body">
+        <div class="care-row"><span>Vaakkai (2 trees: F2-035, F2-078)</span><span style="font-size:12px;color:var(--ts)">Local Telugu variety — confirm botanical name</span></div>
+        <div class="care-row"><span>Peanut Butter Fruit (2 trees: F1-056, F2-026)</span><span style="font-size:12px;color:var(--ts)">Likely Bunchosia argentea — verify</span></div>
+        <div class="care-row"><span>Regi (2 trees: F1-032, F1-064)</span><span style="font-size:12px;color:var(--ts)">Indian Jujube / Ziziphus mauritiana</span></div>
+        <div class="care-row"><span>Citrus (2 trees: F2-036, F2-061)</span><span style="font-size:12px;color:var(--ts)">Generic label — confirm variety (Sweet Lime? Mosambi?)</span></div>
+        <div class="care-row" style="border-bottom:none"><span>Mysore Lemon (1 tree: F2-081)</span><span style="font-size:12px;color:var(--ts)">Regional lemon variety — confirm</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- TREE PROFILE MODAL -->
+<div class="modal-overlay" id="profileModal">
+  <div class="modal">
+    <div class="modal-header"><h3 id="profileTitle">Tree Profile</h3><button class="close-btn" onclick="closeModal('profileModal')">×</button></div>
+    <div class="modal-body" id="profileBody"></div>
+  </div>
+</div>
+
+<script>
+// ── AWS API — injected by deploy.sh ──────────────────────
+const API = 'https://1fejq90sn9.execute-api.ap-south-1.amazonaws.com/prod';
+
+const TODAY = new Date('2026-06-02');
+const PLANTED = new Date('2024-10-01');
+const DAYS_SINCE_PLANT = Math.round((TODAY - PLANTED)/86400000);
+
+const EMOJIS={Mango:'🥭',Guava:'🍈',Lemon:'🍋',Lime:'🍋','Lemon/Lime':'🍋','Custard Apple':'🍦',Sapota:'🍑',Coconut:'🥥',Papaya:'🍊',Banana:'🍌',Pomegranate:'🍎',Drumstick:'🌿','Gooseberry (Amla)':'🫐','Anjeer (Fig)':'🍐',Jackfruit:'🫘',Avocado:'🥑',Peach:'🍑',Persimmon:'🟠',Apple:'🍎',Mulberry:'🫐',Strawberry:'🍓','Peanut Butter Fruit':'🌰','Regi (Indian Jujube)':'🍒','Regi':'🍒',Litchi:'🍒',Citrus:'🍊',Orange:'🍊',Vaakkai:'🌿','Pink Guava':'🍈','Red Guava':'🍈','Guava (Pink)':'🍈','Guava (Thottapuri)':'🍈','Guava (Psidium)':'🍈',Prunes:'🟣','Mysore Lemon':'🍋',Unknown:'❓',Exotic:'🌰','Local Variety':'🌿'};
+
+// Excel serial date to JS date
+function xlDate(n){if(!n)return null;const d=new Date((n-25569)*86400000);return d;}
+function fmtDate(n){if(!n)return'–';const d=typeof n==='number'?xlDate(n):new Date(n);if(!d||isNaN(d))return'–';return d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}
+function daysLate(n){if(!n)return null;const d=typeof n==='number'?xlDate(n):new Date(n);if(!d)return null;return Math.round((TODAY-d)/86400000)}
+
+function getEmoji(name){return EMOJIS[name]||EMOJIS[name?.split(' ')[0]]||'🌳'}
+function stageBadge(s){const m={Vegetative:'b-veg',Flowering:'b-flow',Fruiting:'b-fruit','Harvest Ready':'b-harv'};return`<span class="badge ${m[s]||'b-gray'}">${s||'Unknown'}</span>`}
+
+// ── TREE DATA (from uploaded tracker, all 145 rows) ────────────────
+const TREES=[
+  {id:'F1-001',fam:'Family 1',name:'Mango',species:'Mango',row:1,col:1,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-002',fam:'Family 1',name:'Lemon',species:'Lemon/Lime',row:1,col:2,block:'A',stage:'Flowering',nv:null,ns:null},
+  {id:'F1-003',fam:'Family 1',name:'Mango',species:'Mango',row:1,col:3,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-004',fam:'Family 1',name:'Guava (Pink)',species:'Guava',row:1,col:4,block:'A',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F1-005',fam:'Family 1',name:'Mango',species:'Mango',row:2,col:1,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-006',fam:'Family 1',name:'Mango',species:'Mango',row:2,col:2,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-007',fam:'Family 1',name:'Lime',species:'Lemon/Lime',row:2,col:3,block:'A',stage:'Flowering',nv:null,ns:null},
+  {id:'F1-008',fam:'Family 1',name:'Guava (Thottapuri)',species:'Guava',row:2,col:4,block:'A',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F1-009',fam:'Family 1',name:'Mango',species:'Mango',row:3,col:1,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-010',fam:'Family 1',name:'Guava',species:'Guava',row:3,col:2,block:'A',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F1-011',fam:'Family 1',name:'Custard Apple',species:'Custard Apple',row:3,col:3,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-012',fam:'Family 1',name:'Papaya',species:'Papaya',row:3,col:4,block:'A',stage:'Fruiting',nv:45611,ns:45586},
+  {id:'F1-013',fam:'Family 1',name:'Coconut',species:'Coconut',row:4,col:1,block:'A',stage:'Vegetative',nv:45656,ns:45626},
+  {id:'F1-014',fam:'Family 1',name:'Mango',species:'Mango',row:4,col:2,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-015',fam:'Family 1',name:'Pomegranate',species:'Pomegranate',row:4,col:3,block:'A',stage:'Flowering',nv:45656,ns:45596},
+  {id:'F1-016',fam:'Family 1',name:'Mango',species:'Mango',row:4,col:4,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-017',fam:'Family 1',name:'Gooseberry (Amla)',species:'Gooseberry (Amla)',row:5,col:1,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-018',fam:'Family 1',name:'Mango',species:'Mango',row:5,col:2,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-019',fam:'Family 1',name:'Mango',species:'Mango',row:5,col:3,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-020',fam:'Family 1',name:'Anjeer (Fig)',species:'Anjeer (Fig)',row:5,col:4,block:'A',stage:'Vegetative',nv:45626,ns:45596},
+  {id:'F1-021',fam:'Family 1',name:'Coconut',species:'Coconut',row:6,col:1,block:'A',stage:'Vegetative',nv:45656,ns:45626},
+  {id:'F1-022',fam:'Family 1',name:'Guava',species:'Guava',row:6,col:2,block:'A',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F1-023',fam:'Family 1',name:'Mango',species:'Mango',row:6,col:3,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-024',fam:'Family 1',name:'Avocado',species:'Avocado',row:6,col:4,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-025',fam:'Family 1',name:'Sapota (Chikoo)',species:'Sapota',row:7,col:1,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-026',fam:'Family 1',name:'Sapota',species:'Sapota',row:7,col:2,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-027',fam:'Family 1',name:'Lime',species:'Lemon/Lime',row:7,col:3,block:'A',stage:'Flowering',nv:null,ns:null},
+  {id:'F1-028',fam:'Family 1',name:'Mango',species:'Mango',row:7,col:4,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-029',fam:'Family 1',name:'Mango',species:'Mango',row:8,col:1,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-030',fam:'Family 1',name:'Unknown',species:'Unknown',row:8,col:2,block:'A',stage:null,nv:null,ns:null},
+  {id:'F1-031',fam:'Family 1',name:'Mango',species:'Mango',row:8,col:3,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-032',fam:'Family 1',name:'Regi (Indian Jujube)',species:'Regi',row:8,col:4,block:'A',stage:'Vegetative',nv:null,ns:null},
+  {id:'F1-033',fam:'Family 1',name:'Mango',species:'Mango',row:9,col:1,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-034',fam:'Family 1',name:'Jackfruit',species:'Jackfruit',row:9,col:2,block:'A',stage:'Vegetative',nv:45656,ns:45611},
+  {id:'F1-035',fam:'Family 1',name:'Lime',species:'Lemon/Lime',row:9,col:3,block:'A',stage:'Flowering',nv:null,ns:null},
+  {id:'F1-036',fam:'Family 1',name:'Guava',species:'Guava',row:9,col:4,block:'A',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F1-037',fam:'Family 1',name:'Mango',species:'Mango',row:10,col:1,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-038',fam:'Family 1',name:'Papaya',species:'Papaya',row:10,col:2,block:'A',stage:'Fruiting',nv:45611,ns:45586},
+  {id:'F1-039',fam:'Family 1',name:'Custard Apple',species:'Custard Apple',row:10,col:3,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-040',fam:'Family 1',name:'Guava',species:'Guava',row:10,col:4,block:'A',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F1-041',fam:'Family 1',name:'Coconut',species:'Coconut',row:11,col:1,block:'A',stage:'Vegetative',nv:45656,ns:45626},
+  {id:'F1-042',fam:'Family 1',name:'Drumstick',species:'Drumstick',row:11,col:2,block:'A',stage:'Fruiting',nv:45626,ns:45596},
+  {id:'F1-043',fam:'Family 1',name:'Pomegranate',species:'Pomegranate',row:11,col:3,block:'A',stage:'Flowering',nv:45656,ns:45596},
+  {id:'F1-044',fam:'Family 1',name:'Papaya',species:'Papaya',row:11,col:4,block:'A',stage:'Fruiting',nv:45611,ns:45586},
+  {id:'F1-045',fam:'Family 1',name:'Mango',species:'Mango',row:12,col:1,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-046',fam:'Family 1',name:'Custard Apple',species:'Custard Apple',row:12,col:2,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-047',fam:'Family 1',name:'Peach',species:'Peach',row:12,col:3,block:'A',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F1-048',fam:'Family 1',name:'Drumstick',species:'Drumstick',row:12,col:4,block:'A',stage:'Fruiting',nv:45626,ns:45596},
+  {id:'F1-049',fam:'Family 1',name:'Gooseberry (Amla)',species:'Gooseberry (Amla)',row:13,col:1,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-050',fam:'Family 1',name:'Mango',species:'Mango',row:13,col:2,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-051',fam:'Family 1',name:'Drumstick',species:'Drumstick',row:13,col:3,block:'A',stage:'Fruiting',nv:45626,ns:45596},
+  {id:'F1-052',fam:'Family 1',name:'Anjeer (Fig)',species:'Anjeer (Fig)',row:13,col:4,block:'A',stage:'Vegetative',nv:45626,ns:45596},
+  {id:'F1-053',fam:'Family 1',name:'Coconut',species:'Coconut',row:14,col:1,block:'A',stage:'Vegetative',nv:45656,ns:45626},
+  {id:'F1-054',fam:'Family 1',name:'Mango',species:'Mango',row:14,col:2,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-055',fam:'Family 1',name:'Persimmon',species:'Persimmon',row:14,col:3,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-056',fam:'Family 1',name:'Peanut Butter Fruit',species:'Exotic',row:14,col:4,block:'A',stage:'Vegetative',nv:null,ns:null},
+  {id:'F1-057',fam:'Family 1',name:'Sapota (Chikoo)',species:'Sapota',row:15,col:1,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-058',fam:'Family 1',name:'Mango',species:'Mango',row:15,col:2,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-059',fam:'Family 1',name:'Lime',species:'Lemon/Lime',row:15,col:3,block:'A',stage:'Flowering',nv:null,ns:null},
+  {id:'F1-060',fam:'Family 1',name:'Apple',species:'Apple',row:15,col:4,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-061',fam:'Family 1',name:'Mango',species:'Mango',row:16,col:1,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-062',fam:'Family 1',name:'Coconut',species:'Coconut',row:16,col:2,block:'A',stage:'Vegetative',nv:45656,ns:45626},
+  {id:'F1-063',fam:'Family 1',name:'Mango',species:'Mango',row:16,col:3,block:'A',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F1-064',fam:'Family 1',name:'Regi (Indian Jujube)',species:'Regi',row:16,col:4,block:'A',stage:'Vegetative',nv:null,ns:null},
+  {id:'F2-001',fam:'Family 2',name:'Custard Apple',species:'Custard Apple',row:1,col:5,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-002',fam:'Family 2',name:'Mango',species:'Mango',row:1,col:6,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-003',fam:'Family 2',name:'Pomegranate',species:'Pomegranate',row:1,col:7,block:'B',stage:'Flowering',nv:45656,ns:45596},
+  {id:'F2-004',fam:'Family 2',name:'Coconut',species:'Coconut',row:1,col:8,block:'B',stage:'Vegetative',nv:45656,ns:45626},
+  {id:'F2-005',fam:'Family 2',name:'Mango',species:'Mango',row:1,col:9,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-006',fam:'Family 2',name:'Mango',species:'Mango',row:2,col:5,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-007',fam:'Family 2',name:'Mulberry',species:'Mulberry',row:2,col:6,block:'B',stage:'Fruiting',nv:45611,ns:45591},
+  {id:'F2-008',fam:'Family 2',name:'Lemon',species:'Lemon/Lime',row:2,col:7,block:'B',stage:'Flowering',nv:null,ns:null},
+  {id:'F2-009',fam:'Family 2',name:'Mango',species:'Mango',row:2,col:8,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-010',fam:'Family 2',name:'Mango',species:'Mango',row:2,col:9,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-011',fam:'Family 2',name:'Banana',species:'Banana',row:3,col:5,block:'B',stage:'Fruiting',nv:45611,ns:45596},
+  {id:'F2-012',fam:'Family 2',name:'Custard Apple',species:'Custard Apple',row:3,col:6,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-013',fam:'Family 2',name:'Papaya',species:'Papaya',row:3,col:7,block:'B',stage:'Fruiting',nv:45611,ns:45586},
+  {id:'F2-014',fam:'Family 2',name:'Mango',species:'Mango',row:3,col:8,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-015',fam:'Family 2',name:'Custard Apple',species:'Custard Apple',row:3,col:9,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-016',fam:'Family 2',name:'Unknown',species:'Unknown',row:4,col:5,block:'B',stage:null,nv:null,ns:null},
+  {id:'F2-017',fam:'Family 2',name:'Peach',species:'Peach',row:4,col:6,block:'B',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F2-018',fam:'Family 2',name:'Peach',species:'Peach',row:4,col:7,block:'B',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F2-019',fam:'Family 2',name:'Banana',species:'Banana',row:4,col:8,block:'B',stage:'Fruiting',nv:45611,ns:45596},
+  {id:'F2-020',fam:'Family 2',name:'Mango',species:'Mango',row:4,col:9,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-021',fam:'Family 2',name:'Unknown',species:'Unknown',row:5,col:5,block:'B',stage:null,nv:null,ns:null},
+  {id:'F2-022',fam:'Family 2',name:'Pink Guava',species:'Guava',row:5,col:6,block:'B',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F2-023',fam:'Family 2',name:'Strawberry',species:'Strawberry',row:5,col:7,block:'B',stage:'Fruiting',nv:45596,ns:45581},
+  {id:'F2-024',fam:'Family 2',name:'Papaya',species:'Papaya',row:5,col:8,block:'B',stage:'Fruiting',nv:45611,ns:45586},
+  {id:'F2-025',fam:'Family 2',name:'Pomegranate',species:'Pomegranate',row:5,col:9,block:'B',stage:'Flowering',nv:45656,ns:45596},
+  {id:'F2-026',fam:'Family 2',name:'Peanut Butter Fruit',species:'Exotic',row:6,col:5,block:'B',stage:'Vegetative',nv:null,ns:null},
+  {id:'F2-027',fam:'Family 2',name:'Mango',species:'Mango',row:6,col:6,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-028',fam:'Family 2',name:'Drumstick',species:'Drumstick',row:6,col:7,block:'B',stage:'Fruiting',nv:45626,ns:45596},
+  {id:'F2-029',fam:'Family 2',name:'Banana',species:'Banana',row:6,col:8,block:'B',stage:'Fruiting',nv:45611,ns:45596},
+  {id:'F2-030',fam:'Family 2',name:'Mango',species:'Mango',row:6,col:9,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-031',fam:'Family 2',name:'Guava',species:'Guava',row:7,col:5,block:'B',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F2-032',fam:'Family 2',name:'Peach',species:'Peach',row:7,col:6,block:'B',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F2-033',fam:'Family 2',name:'Custard Apple',species:'Custard Apple',row:7,col:7,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-034',fam:'Family 2',name:'Mango',species:'Mango',row:7,col:8,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-035',fam:'Family 2',name:'Vaakkai',species:'Local Variety',row:7,col:9,block:'B',stage:'Vegetative',nv:null,ns:null},
+  {id:'F2-036',fam:'Family 2',name:'Citrus',species:'Citrus',row:8,col:5,block:'B',stage:'Flowering',nv:null,ns:null},
+  {id:'F2-037',fam:'Family 2',name:'Red Guava',species:'Guava',row:8,col:6,block:'B',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F2-038',fam:'Family 2',name:'Peach',species:'Peach',row:8,col:7,block:'B',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F2-039',fam:'Family 2',name:'Custard Apple',species:'Custard Apple',row:8,col:8,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-040',fam:'Family 2',name:'Mango',species:'Mango',row:8,col:9,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-041',fam:'Family 2',name:'Sapota',species:'Sapota',row:9,col:5,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-042',fam:'Family 2',name:'Mango',species:'Mango',row:9,col:6,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-043',fam:'Family 2',name:'Unknown',species:'Unknown',row:9,col:7,block:'B',stage:null,nv:null,ns:null},
+  {id:'F2-044',fam:'Family 2',name:'Guava (Psidium)',species:'Guava',row:9,col:8,block:'B',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F2-045',fam:'Family 2',name:'Mango',species:'Mango',row:9,col:9,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-046',fam:'Family 2',name:'Unknown',species:'Unknown',row:10,col:5,block:'B',stage:null,nv:null,ns:null},
+  {id:'F2-047',fam:'Family 2',name:'Mango',species:'Mango',row:10,col:6,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-048',fam:'Family 2',name:'Sapota',species:'Sapota',row:10,col:7,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-049',fam:'Family 2',name:'Coconut',species:'Coconut',row:10,col:8,block:'B',stage:'Vegetative',nv:45656,ns:45626},
+  {id:'F2-050',fam:'Family 2',name:'Pomegranate',species:'Pomegranate',row:10,col:9,block:'B',stage:'Flowering',nv:45656,ns:45596},
+  {id:'F2-051',fam:'Family 2',name:'Banana',species:'Banana',row:11,col:5,block:'B',stage:'Fruiting',nv:45611,ns:45596},
+  {id:'F2-052',fam:'Family 2',name:'Mulberry',species:'Mulberry',row:11,col:6,block:'B',stage:'Fruiting',nv:45611,ns:45591},
+  {id:'F2-053',fam:'Family 2',name:'Orange',species:'Orange',row:11,col:7,block:'B',stage:'Flowering',nv:null,ns:null},
+  {id:'F2-054',fam:'Family 2',name:'Unknown',species:'Unknown',row:11,col:8,block:'B',stage:null,nv:null,ns:null},
+  {id:'F2-055',fam:'Family 2',name:'Mango',species:'Mango',row:11,col:9,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-056',fam:'Family 2',name:'Litchi',species:'Litchi',row:12,col:5,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-057',fam:'Family 2',name:'Custard Apple',species:'Custard Apple',row:12,col:6,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-058',fam:'Family 2',name:'Papaya',species:'Papaya',row:12,col:7,block:'B',stage:'Fruiting',nv:45611,ns:45586},
+  {id:'F2-059',fam:'Family 2',name:'Mango',species:'Mango',row:12,col:8,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-060',fam:'Family 2',name:'Apple',species:'Apple',row:12,col:9,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-061',fam:'Family 2',name:'Citrus',species:'Citrus',row:13,col:5,block:'B',stage:'Flowering',nv:null,ns:null},
+  {id:'F2-062',fam:'Family 2',name:'Prunes',species:'Prunes',row:13,col:6,block:'B',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F2-063',fam:'Family 2',name:'Mango',species:'Mango',row:13,col:7,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-064',fam:'Family 2',name:'Banana',species:'Banana',row:13,col:8,block:'B',stage:'Fruiting',nv:45611,ns:45596},
+  {id:'F2-065',fam:'Family 2',name:'Mango',species:'Mango',row:13,col:9,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-066',fam:'Family 2',name:'Drumstick',species:'Drumstick',row:14,col:5,block:'B',stage:'Fruiting',nv:45626,ns:45596},
+  {id:'F2-067',fam:'Family 2',name:'Guava',species:'Guava',row:14,col:6,block:'B',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F2-068',fam:'Family 2',name:'Unknown',species:'Unknown',row:14,col:7,block:'B',stage:null,nv:null,ns:null},
+  {id:'F2-069',fam:'Family 2',name:'Unknown',species:'Unknown',row:14,col:8,block:'B',stage:null,nv:null,ns:null},
+  {id:'F2-070',fam:'Family 2',name:'Unknown',species:'Unknown',row:14,col:9,block:'B',stage:null,nv:null,ns:null},
+  {id:'F2-071',fam:'Family 2',name:'Guava',species:'Guava',row:15,col:5,block:'B',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F2-072',fam:'Family 2',name:'Peach',species:'Peach',row:15,col:6,block:'B',stage:'Vegetative',nv:45626,ns:45591},
+  {id:'F2-073',fam:'Family 2',name:'Mango',species:'Mango',row:15,col:7,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-074',fam:'Family 2',name:'Unknown',species:'Unknown',row:15,col:8,block:'B',stage:null,nv:null,ns:null},
+  {id:'F2-075',fam:'Family 2',name:'Banana',species:'Banana',row:15,col:9,block:'B',stage:'Fruiting',nv:45611,ns:45596},
+  {id:'F2-076',fam:'Family 2',name:'Lemon',species:'Lemon/Lime',row:16,col:5,block:'B',stage:'Flowering',nv:null,ns:null},
+  {id:'F2-077',fam:'Family 2',name:'Mango',species:'Mango',row:16,col:6,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-078',fam:'Family 2',name:'Vaakkai',species:'Local Variety',row:16,col:7,block:'B',stage:'Vegetative',nv:null,ns:null},
+  {id:'F2-079',fam:'Family 2',name:'Unknown',species:'Unknown',row:16,col:8,block:'B',stage:null,nv:null,ns:null},
+  {id:'F2-080',fam:'Family 2',name:'Mango',species:'Mango',row:16,col:9,block:'B',stage:'Vegetative',nv:45656,ns:45596},
+  {id:'F2-081',fam:'Family 2',name:'Mysore Lemon',species:'Lemon/Lime',row:18,col:6,block:'B',stage:'Flowering',nv:null,ns:null},
+];
+
+let ACTIVITIES=[];
+let stageFilt='',viewMode='table';
+
+// ── SYNC STATUS ───────────────────────────────────────────
+function setSyncStatus(status, msg) {
+  const dot  = document.getElementById('syncDot');
+  const text = document.getElementById('syncStatus');
+  if (!dot || !text) return;
+  dot.style.background = status === 'ok' ? '#4CAF50' : status === 'syncing' ? '#f0a500' : '#c0392b';
+  dot.style.animation  = status === 'syncing' ? 'blink 1s infinite' : 'none';
+  text.textContent = msg;
+}
+
+// ── API CALLS ─────────────────────────────────────────────
+async function loadFromAPI() {
+  setSyncStatus('syncing', 'Connecting…');
+  try {
+    const [tr, ac] = await Promise.all([
+      fetch(API + '/farm/load?key=trees').then(r => r.json()),
+      fetch(API + '/farm/load?key=activities').then(r => r.json()),
+    ]);
+    if (tr.data)  TREES      = tr.data;
+    if (ac.data)  ACTIVITIES = ac.data;
+    const ts = tr.updatedAt
+      ? new Date(tr.updatedAt).toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'})
+      : 'never';
+    setSyncStatus('ok', 'Live · synced ' + ts);
+  } catch(e) {
+    setSyncStatus('error', 'Offline — local only');
+  }
+  initSpeciesFilter();
+  renderDashboard();
+  renderIssues();
+  renderActivities();
+}
+
+async function saveToAPI(key, data, label) {
+  setSyncStatus('syncing', 'Saving…');
+  try {
+    await fetch(API + '/farm/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, data }),
+    });
+    setSyncStatus('ok', 'Saved · ' + new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'}));
+    showToast('✅ ' + label + ' saved to cloud');
+  } catch(e) {
+    setSyncStatus('error', 'Save failed');
+    showToast('⚠ Could not save — check connection');
+  }
+}
+
+// ── NAVIGATION ────────────────────────────────────────────
+function go(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (page === 'trees')      renderTrees();
+  if (page === 'care')       renderCare();
+  if (page === 'map')        renderMap();
+  if (page === 'issues')     renderIssues();
+  if (page === 'activities') renderActivities();
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m =>
+  m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); })
+);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+
+function setStageFilt(f, el) {
+  stageFilt = f;
+  document.querySelectorAll('#stagePills .pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderTrees();
+}
+
+function initSpeciesFilter() {
+  const sp = [...new Set(TREES.filter(t => t.species && t.species !== 'Unknown').map(t => t.species))].sort();
+  document.getElementById('speciesFilter').innerHTML =
+    '<option value="">All Species</option>' + sp.map(s => `<option>${s}</option>`).join('');
+}
+
+function renderTrees() {
+  const q   = (document.getElementById('treeSearch')?.value || '').toLowerCase();
+  const spf = document.getElementById('speciesFilter')?.value || '';
+  const bf  = document.getElementById('blockFilter')?.value   || '';
+  const filtered = TREES.filter(t => {
+    if (stageFilt === 'Unknown' && t.species !== 'Unknown') return false;
+    if (stageFilt && stageFilt !== 'Unknown' && t.stage !== stageFilt) return false;
+    if (spf && t.species !== spf) return false;
+    if (bf  && t.block   !== bf)  return false;
+    if (q && ![t.id, t.name, t.species, t.block, t.stage || ''].some(v => v.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  document.getElementById('treesTitle').textContent = `Tree Registry (${filtered.length})`;
+  document.getElementById('treeRows').innerHTML = filtered.map(t => {
+    const nvDl = daysLate(t.nv), nsDl = daysLate(t.ns);
+    return `<tr class="clickable" onclick="showProfile('${t.id}')">
+      <td><strong style="font-family:monospace;font-size:12px;color:${t.fam==='Family 2'?'#7b1fa2':'var(--bl2)'}">${t.id}</strong></td>
+      <td>${getEmoji(t.name)} ${t.name}</td>
+      <td style="color:var(--ts)">${t.species}</td>
+      <td><span class="badge b-gray">Block ${t.block}</span></td>
+      <td style="font-family:monospace;font-size:11px;color:var(--tm)">R${t.row}C${t.col}</td>
+      <td style="font-size:12px;color:var(--ts)">Oct 2024</td>
+      <td>${stageBadge(t.stage)}</td>
+      <td style="font-size:12px;color:${nvDl&&nvDl>0?'var(--re)':'var(--gm)'}">${t.nv ? fmtDate(t.nv) : '–'}</td>
+      <td style="font-size:12px;color:${nsDl&&nsDl>0?'var(--re)':'var(--gm)'}">${t.ns ? fmtDate(t.ns) : '–'}</td>
+      <td>${t.nv ? '<span class="badge b-red">Overdue</span>' : t.species==='Unknown' ? '<span class="badge b-unk">Identify first</span>' : '<span class="badge b-gray">–</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportCSV() {
+  const h    = ['Tree ID','Family','Name','Species','Block','Row','Col','Stage','Next Vermicompost','Next Spray'];
+  const rows = TREES.map(t => [t.id, t.fam, `"${t.name}"`, t.species, t.block, t.row, t.col, t.stage||'', fmtDate(t.nv), fmtDate(t.ns)]);
+  const csv  = [h, ...rows].map(r => r.join(',')).join('\n');
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = 'prerana_trees.csv';
+  a.click();
+}
+
+function renderCare() {
+  const overdue = TREES.filter(t => t.nv);
+  document.getElementById('careRows').innerHTML = overdue.map(t => {
+    const dl = daysLate(t.nv) || 0;
+    return `<tr class="clickable" onclick="showProfile('${t.id}')">
+      <td><strong style="font-family:monospace;font-size:12px;color:var(--bl2)">${t.id}</strong></td>
+      <td>${getEmoji(t.name)} ${t.name}</td>
+      <td><span class="badge b-gray">Block ${t.block}</span></td>
+      <td style="color:var(--re);font-size:12px">${fmtDate(t.nv)}</td>
+      <td style="color:var(--re);font-size:12px">${t.ns ? fmtDate(t.ns) : '–'}</td>
+      <td><span class="badge b-red">${dl} days late</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderMap() {
+  const cellMap = {};
+  TREES.forEach(t => cellMap[`${t.row}_${t.col}`] = t);
+  const ROWS = 18;
+  let html = `<div style="display:grid;grid-template-columns:auto repeat(9,1fr);gap:3px;min-width:680px">`;
+  html += `<div style="font-size:10px;color:var(--tm);text-align:center;padding:4px">Row</div>`;
+  for (let c = 1; c <= 9; c++) {
+    const fc = c <= 4 ? 'var(--bl2)' : '#7b1fa2';
+    html += `<div style="font-size:11px;font-weight:600;color:${fc};text-align:center;padding:4px">Col ${c}</div>`;
+  }
+  html += `<div style="grid-column:1/-1;height:1px;background:var(--brd);margin:2px 0"></div>`;
+  for (let r = 1; r <= ROWS; r++) {
+    html += `<div style="font-size:10px;color:var(--tm);display:flex;align-items:center;justify-content:center;padding:2px 4px">${r}</div>`;
+    for (let c = 1; c <= 9; c++) {
+      const t = cellMap[`${r}_${c}`];
+      if (t) {
+        let bg, border;
+        if (t.species === 'Unknown')    { bg='#f5f5f5'; border='1px dashed #ccc'; }
+        else if (t.stage === 'Fruiting') { bg='#cce5ff'; border='1px solid #4d94ff'; }
+        else if (t.stage === 'Flowering'){ bg='#fff3cd'; border='1px solid #ffc107'; }
+        else if (c <= 4)                 { bg='rgba(21,101,192,.08)'; border='1px solid rgba(21,101,192,.25)'; }
+        else                             { bg='rgba(123,31,162,.07)'; border='1px solid rgba(123,31,162,.2)'; }
+        html += `<div class="map-cell" style="background:${bg};border:${border}" onclick="showProfile('${t.id}')" title="${t.name} (${t.id})">
+          <div class="mc-emoji">${getEmoji(t.name)}</div>
+          <div class="mc-name">${t.name.split(' ')[0]}</div>
+          <div class="mc-id">${t.id}</div>
+        </div>`;
+      } else {
+        const bg = c <= 4 ? 'rgba(21,101,192,.02)' : 'rgba(123,31,162,.02)';
+        html += `<div style="background:${bg};border:1px dashed rgba(0,0,0,.07);border-radius:5px;min-height:48px;display:flex;align-items:center;justify-content:center"><span style="font-size:10px;color:#ddd">–</span></div>`;
+      }
+    }
+  }
+  html += `</div>`;
+  document.getElementById('farmMap').innerHTML = html;
+}
+
+function renderIssues() {
+  const unk = TREES.filter(t => t.species === 'Unknown');
+  document.getElementById('unknownList').innerHTML = unk.map(t => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--brd);font-size:13px">
+      <span style="font-family:monospace;color:var(--re);font-weight:600">${t.id}</span>
+      <span style="color:var(--ts)">R${t.row}C${t.col} · Block ${t.block}</span>
+      <button class="btn btn-outline btn-sm" style="margin-left:auto;font-size:11px" onclick="showProfile('${t.id}')">View & Edit</button>
+    </div>`).join('');
+}
+
+function renderActivities() {
+  const el = document.getElementById('actRows');
+  if (!ACTIVITIES.length) {
+    el.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--tm)">No activities logged yet. Log the first one above!</td></tr>`;
+    return;
+  }
+  el.innerHTML = ACTIVITIES.map(a => `
+    <tr><td style="font-size:12px">${a.date}</td>
+    <td style="font-family:monospace;font-size:12px;color:var(--bl2)">${a.tree}</td>
+    <td><span class="badge b-green">${a.type}</span></td>
+    <td style="font-size:12px">${a.qty} ${a.unit}</td>
+    <td style="font-size:12px;color:var(--ts)">${a.by}</td>
+    <td style="font-size:12px;color:var(--tm)">${a.notes}</td></tr>`).join('');
+}
+
+async function saveActivity() {
+  const t = document.getElementById('aa_tree').value.trim();
+  if (!t) { alert('Please enter a Tree ID or Block'); return; }
+  ACTIVITIES.unshift({
+    date: document.getElementById('aa_date').value,
+    tree: t,
+    type: document.getElementById('aa_type').value,
+    qty:  document.getElementById('aa_qty').value  || '–',
+    unit: document.getElementById('aa_unit').value,
+    by:   document.getElementById('aa_by').value   || '–',
+    notes:document.getElementById('aa_notes').value,
+  });
+  await saveToAPI('activities', ACTIVITIES, `Activity for ${t}`);
+  ['aa_tree','aa_qty','aa_by','aa_notes'].forEach(id => document.getElementById(id).value = '');
+  renderActivities();
+  renderDashboard();
+}
+
+function showProfile(id) {
+  const t = TREES.find(x => x.id === id); if (!t) return;
+  const nvDl = daysLate(t.nv), nsDl = daysLate(t.ns);
+  const hdrCls = t.stage === 'Fruiting' ? 'fruiting' : t.stage === 'Flowering' ? 'flowering' : '';
+  document.getElementById('profileTitle').textContent = `${t.id} · ${t.name}`;
+  document.getElementById('profileBody').innerHTML = `
+    <div class="profile-hdr ${hdrCls}">
+      <div class="profile-icon">${getEmoji(t.name)}</div>
+      <div style="flex:1">
+        <h2 style="font-size:19px;margin-bottom:3px">${t.name}</h2>
+        <p style="opacity:.7;font-size:13px">${t.id} · Block ${t.block} · R${t.row}C${t.col} · ${t.fam}</p>
+        <div style="display:flex;gap:8px;margin-top:8px">${stageBadge(t.stage)}</div>
+      </div>
+    </div>
+
+    ${t.species==='Unknown'?`<div class="warn-box"><i class="ti ti-alert-circle" style="flex-shrink:0"></i><div><strong>Unknown tree — needs identification</strong><br><span style="font-size:12px">Walk to R${t.row}C${t.col} in Block ${t.block} and fill in the correct name below.</span></div></div>`:''}
+    ${nvDl&&nvDl>0?`<div class="warn-box"><i class="ti ti-alarm" style="flex-shrink:0"></i><div>Vermicompost overdue by <strong>${nvDl} days</strong>. Next spray overdue by ${nsDl||0} days.</div></div>`:''}
+
+    <div style="background:var(--cr);border:1px solid var(--brd);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:600;color:var(--gd);text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px">✏ Edit Tree Details</div>
+      <div class="act-form">
+        <div class="form-group"><label>Tree Name</label>
+          <input id="ed_name" value="${t.name||''}" placeholder="e.g. Mango"
+            style="padding:7px 10px;border:1px solid var(--brd);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--te);outline:none;width:100%"/></div>
+        <div class="form-group"><label>Species</label>
+          <input id="ed_species" value="${t.species||''}" placeholder="e.g. Mango"
+            style="padding:7px 10px;border:1px solid var(--brd);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--te);outline:none;width:100%"/></div>
+        <div class="form-group"><label>Growth Stage</label>
+          <select id="ed_stage" style="padding:7px 10px;border:1px solid var(--brd);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--te);outline:none;width:100%">
+            <option value="" ${!t.stage?'selected':''}>Not set</option>
+            <option ${t.stage==='Vegetative'?'selected':''}>Vegetative</option>
+            <option ${t.stage==='Flowering'?'selected':''}>Flowering</option>
+            <option ${t.stage==='Fruiting'?'selected':''}>Fruiting</option>
+            <option ${t.stage==='Harvest Ready'?'selected':''}>Harvest Ready</option>
+          </select></div>
+        <div class="form-group"><label>Health</label>
+          <select id="ed_health" style="padding:7px 10px;border:1px solid var(--brd);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--te);outline:none;width:100%">
+            <option ${t.health==='Healthy'?'selected':''}>Healthy</option>
+            <option ${t.health==='Needs Attention'?'selected':''}>Needs Attention</option>
+            <option ${t.health==='Weak'?'selected':''}>Weak</option>
+            <option ${t.health==='Sick'?'selected':''}>Sick</option>
+          </select></div>
+        <div class="form-group form-full"><label>Notes</label>
+          <input id="ed_notes" value="${t.notes||''}" placeholder="Any observations…"
+            style="padding:7px 10px;border:1px solid var(--brd);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--te);outline:none;width:100%"/></div>
+      </div>
+      <div class="modal-footer" style="border-top:none;margin-top:10px;padding-top:0">
+        <button class="btn btn-primary btn-sm" id="saveEditBtn" onclick="saveTreeEdit('${id}')"><i class="ti ti-cloud-upload"></i>Save to Cloud</button>
+        <button class="btn btn-outline btn-sm" onclick="closeModal('profileModal')">Cancel</button>
+      </div>
+    </div>
+
+    <div class="meta-grid">
+      <div class="meta-box"><label>Species</label><p>${t.species}</p></div>
+      <div class="meta-box"><label>Block</label><p>Block ${t.block} (${t.fam})</p></div>
+      <div class="meta-box"><label>Grid Position</label><p>Row ${t.row} · Col ${t.col}</p></div>
+      <div class="meta-box"><label>Planted</label><p>Oct 2024</p></div>
+      <div class="meta-box"><label>Age</label><p>~18 months</p></div>
+      <div class="meta-box"><label>Stage</label><p>${t.stage||'Unknown'}</p></div>
+      <div class="meta-box"><label>Next Vermicompost</label><p style="color:${nvDl&&nvDl>0?'var(--re)':'var(--gm)'}">${t.nv?fmtDate(t.nv):'–'}</p></div>
+      <div class="meta-box"><label>Next Neem Spray</label><p style="color:${nsDl&&nsDl>0?'var(--re)':'var(--gm)'}">${t.ns?fmtDate(t.ns):'–'}</p></div>
+      <div class="meta-box"><label>Care Status</label><p style="color:var(--re)">${t.nv?'Overdue':t.species==='Unknown'?'Identify first':'On schedule'}</p></div>
+    </div>
+    <div style="margin-top:8px">
+      <button class="btn btn-primary btn-sm" onclick="closeModal('profileModal');go('activities',document.querySelector('[onclick*=activities]'));setTimeout(()=>document.getElementById('aa_tree').value='${t.id}',100)">
+        <i class="ti ti-plus"></i>Log Activity for this tree
+      </button>
+    </div>`;
+  document.getElementById('profileModal').classList.add('open');
+}
+
+async function saveTreeEdit(id) {
+  const t = TREES.find(x => x.id === id); if (!t) return;
+  const btn = document.getElementById('saveEditBtn');
+  btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> Saving…';
+  t.name    = document.getElementById('ed_name').value.trim()    || t.name;
+  t.species = document.getElementById('ed_species').value.trim() || t.species;
+  t.stage   = document.getElementById('ed_stage').value          || null;
+  t.health  = document.getElementById('ed_health').value;
+  t.notes   = document.getElementById('ed_notes').value.trim();
+  await saveToAPI('trees', TREES, `${id} updated`);
+  closeModal('profileModal');
+  const p = document.querySelector('.page.active');
+  if (p.id==='page-trees')  renderTrees();
+  if (p.id==='page-map')    renderMap();
+  if (p.id==='page-issues') renderIssues();
+  renderDashboard();
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--gd);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2)';
+  t.textContent = msg; document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2800);
+}
+
+// Dashboard charts + lists
+let sc1 = null, sc2 = null;
+function renderDashboard() {
+  const sp = {}; TREES.filter(t => t.species && t.species !== 'Unknown').forEach(t => { sp[t.species] = (sp[t.species]||0)+1; });
+  const sorted = Object.entries(sp).sort((a,b) => b[1]-a[1]).slice(0,10);
+  const COLS = ['#2d7a4a','#f0a500','#c4a882','#4caf72','#c8e600','#ff8a65','#e91e63','#7e57c2','#26c6da','#78909c'];
+  if (sc1) sc1.destroy();
+  sc1 = new Chart(document.getElementById('chartSpecies'), {
+    type:'bar', data:{labels:sorted.map(x=>x[0]),datasets:[{data:sorted.map(x=>x[1]),backgroundColor:sorted.map((_,i)=>COLS[i]),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'}},x:{ticks:{font:{size:9}},grid:{display:false}}}},
+  });
+  if (sc2) sc2.destroy();
+  sc2 = new Chart(document.getElementById('chartStage'), {
+    type:'doughnut',
+    data:{labels:['Vegetative','Flowering','Fruiting'],datasets:[{data:[TREES.filter(t=>t.stage==='Vegetative').length,TREES.filter(t=>t.stage==='Flowering').length,TREES.filter(t=>t.stage==='Fruiting').length],backgroundColor:['#2d7a4a','#d4841a','#1565c0'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}}}},
+  });
+  const flowering = TREES.filter(t => t.stage === 'Flowering');
+  document.getElementById('dashFlowering').innerHTML = flowering.map(t=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--brd);font-size:13px"><span>${getEmoji(t.name)}</span><span>${t.name}</span><span style="font-family:monospace;font-size:11px;color:var(--tm);margin-left:auto">${t.id}</span></div>`).join('');
+  const fruiting  = TREES.filter(t => t.stage === 'Fruiting');
+  document.getElementById('dashFruiting').innerHTML  = fruiting.map(t=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--brd);font-size:13px"><span>${getEmoji(t.name)}</span><span>${t.name}</span><span style="font-family:monospace;font-size:11px;color:var(--tm);margin-left:auto">${t.id}</span></div>`).join('');
+}
+
+// ── BOOT ─────────────────────────────────────────────────
+initSpeciesFilter();
+loadFromAPI();   // loads trees + activities from DynamoDB, then renders everything
+
+</script>
+</body>
+</html>
